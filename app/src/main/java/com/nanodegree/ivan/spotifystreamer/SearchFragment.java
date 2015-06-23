@@ -31,7 +31,7 @@ import kaaes.spotify.webapi.android.models.Pager;
 public class SearchFragment extends Fragment {
 
     private ArrayAdapter<String> mSpotifyAdapter;
-
+    FetchSpotyArtistTask spotify;
     EditText inputSearch;
 
     public SearchFragment() {
@@ -57,8 +57,7 @@ public class SearchFragment extends Fragment {
         ListView listView = (ListView) rootView.findViewById(R.id.listview_spotify);
         listView.setAdapter(mSpotifyAdapter);
 
-        FetchSpotyArtistTask spotify = new FetchSpotyArtistTask();
-        spotify.execute("Dire Straits");
+
         try {
             doSearch(rootView);
         }catch (Exception e)
@@ -73,7 +72,7 @@ public class SearchFragment extends Fragment {
 
     private void doSearch(View rootView) {
         inputSearch = (EditText)rootView.findViewById(R.id.searchListSongs);
-        /*inputSearch.addTextChangedListener(new TextWatcher() {
+        inputSearch.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             }
@@ -84,25 +83,17 @@ public class SearchFragment extends Fragment {
 
             @Override
             public void afterTextChanged(Editable s) {
-                String text = inputSearch.getText().toString().toLowerCase(Locale.getDefault());
-
-                // TODO lanzar busqueda lanzando la llamada AsyncTask
-                FetchSpotyArtistTask spotify = new FetchSpotyArtistTask();
-                spotify.execute(text);
-            }
-        });*/
-
-        inputSearch.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View v, boolean hasFocus) {
-                if(hasFocus){
-
-                }else {
-                    FetchSpotyArtistTask spotify = new FetchSpotyArtistTask();
+                if (spotify != null) spotify.cancel(true);
+                if (!inputSearch.getText().toString().equals("")) {
+                    spotify = new FetchSpotyArtistTask();
                     spotify.execute(inputSearch.getText().toString());
+                } else {
+                    mSpotifyAdapter.clear();
                 }
             }
         });
+
+
     }
 
     public class FetchSpotyArtistTask extends AsyncTask<String, Void,  String[]> {
@@ -118,12 +109,16 @@ public class SearchFragment extends Fragment {
 
         @Override
         protected  String[] doInBackground(String... params) {
+            try {
+                Thread.sleep(300);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             SpotifyApi api = new SpotifyApi();
             SpotifyService spotify = api.getService();
             ArtistsPager results = spotify.searchArtists(params[0]);
             Pager<Artist> artist =  results.artists;
             List<Artist> lista = artist.items;
-            // Todo recorrer la lista para coger .name , images, y lo que necesitemos
             String[] resultStrs = new String[lista.size()];
             int index = 0;
             for (Artist artista: lista) {
