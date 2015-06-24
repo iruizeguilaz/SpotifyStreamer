@@ -8,20 +8,21 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyService;
 import kaaes.spotify.webapi.android.models.Artist;
 import kaaes.spotify.webapi.android.models.ArtistsPager;
+import kaaes.spotify.webapi.android.models.Image;
 import kaaes.spotify.webapi.android.models.Pager;
 
 
@@ -30,7 +31,7 @@ import kaaes.spotify.webapi.android.models.Pager;
  */
 public class SearchFragment extends Fragment {
 
-    private ArrayAdapter<String> mSpotifyAdapter;
+    private ArtistAdapter mSpotifyAdapter;
     FetchSpotyArtistTask spotify;
     EditText inputSearch;
 
@@ -43,17 +44,15 @@ public class SearchFragment extends Fragment {
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
         //doSearch();
-        List<String> weekForecast = new ArrayList<String>();
-
+        String [] listAlbums = {};
+        List<Artist> lista = new ArrayList<>();
         // Now that we have some dummy forecast data, create an ArrayAdapter.
         // The ArrayAdapter will take data from a source (like our dummy forecast) and
         // use it to populate the ListView it's attached to.
         mSpotifyAdapter =
-                new ArrayAdapter<String>(
-                        getActivity(), // The current context (this activity)
-                        R.layout.list_item_spotify, // The name of the layout ID.
-                        R.id.list_item_spotify_textview, // The ID of the textview to populate.
-                        weekForecast);
+                new ArtistAdapter(getActivity(),
+                        R.layout.list_item_spotify, // The current context (this activity)
+                        lista);
         ListView listView = (ListView) rootView.findViewById(R.id.listview_spotify);
         listView.setAdapter(mSpotifyAdapter);
 
@@ -68,6 +67,19 @@ public class SearchFragment extends Fragment {
 
         return rootView;
 
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        // Add this line in order for this fragment to handle menu events.
+        setHasOptionsMenu(true);
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.searchfragment, menu);
+        super.onCreateOptionsMenu(menu, inflater);
     }
 
     private void doSearch(View rootView) {
@@ -88,7 +100,7 @@ public class SearchFragment extends Fragment {
                     spotify = new FetchSpotyArtistTask();
                     spotify.execute(inputSearch.getText().toString());
                 } else {
-                    mSpotifyAdapter.clear();
+                    if(mSpotifyAdapter!= null) mSpotifyAdapter.clear();
                 }
             }
         });
@@ -96,7 +108,7 @@ public class SearchFragment extends Fragment {
 
     }
 
-    public class FetchSpotyArtistTask extends AsyncTask<String, Void,  String[]> {
+    public class FetchSpotyArtistTask extends AsyncTask<String, Void,  List<Artist>> {
 
         private final String LOG_TAG = FetchSpotyArtistTask.class.getSimpleName();
 
@@ -108,7 +120,7 @@ public class SearchFragment extends Fragment {
         }
 
         @Override
-        protected  String[] doInBackground(String... params) {
+        protected  List<Artist> doInBackground(String... params) {
             try {
                 Thread.sleep(300);
             } catch (InterruptedException e) {
@@ -119,22 +131,26 @@ public class SearchFragment extends Fragment {
             ArtistsPager results = spotify.searchArtists(params[0]);
             Pager<Artist> artist =  results.artists;
             List<Artist> lista = artist.items;
-            String[] resultStrs = new String[lista.size()];
+            /* String[] resultNames = new String[lista.size()];
+            Integer[] resultImages = new Integer[lista.size()];
             int index = 0;
             for (Artist artista: lista) {
-                resultStrs[index] = getDataFromArtist(artista);
+                resultNames[index] = getDataFromArtist(artista);
+                List<Image> images = artista.images;
+                if (images.size() > 0)
+                    Object image = images.get(0);
                 index++;
-            }
+            }*/
             Log.v(LOG_TAG, "Spotify string: " + lista.toString());
-            return resultStrs;
+            return lista;
         }
 
         @Override
-        protected void onPostExecute(String[] result) {
+        protected void onPostExecute(List<Artist> result) {
             if (result != null) {
                 mSpotifyAdapter.clear();
-                for(String albumSpotifyStr : result) {
-                    mSpotifyAdapter.add(albumSpotifyStr);
+                for(Artist artista : result) {
+                    mSpotifyAdapter.add(artista);
                 }
                 // New data is back from the server.  Hooray!
             }
