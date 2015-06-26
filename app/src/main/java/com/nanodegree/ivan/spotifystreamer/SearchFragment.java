@@ -42,7 +42,6 @@ public class SearchFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-
         //doSearch();
         String [] listAlbums = {};
         List<Artist> lista = new ArrayList<>();
@@ -73,7 +72,7 @@ public class SearchFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // Add this line in order for this fragment to handle menu events.
-        setHasOptionsMenu(true);
+        //setHasOptionsMenu(true);
     }
 
     @Override
