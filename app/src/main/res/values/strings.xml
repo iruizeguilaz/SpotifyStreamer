@@ -3,4 +3,8 @@
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="edittext_message">Intrudce the artist here...</string>
+    <string name="noalbums_message">There are no albums with this name. Please, refine the search.</string>
+    <string name="action_popular">Popular</string>
+    <string name="title_activity_popular_fragnmet">PopularFragnmet</string>
+
 </resources>

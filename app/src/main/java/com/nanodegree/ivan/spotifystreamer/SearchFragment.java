@@ -1,6 +1,7 @@
 package com.nanodegree.ivan.spotifystreamer;
 
 
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -10,10 +11,12 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +37,7 @@ public class SearchFragment extends Fragment {
     private ArtistAdapter mSpotifyAdapter;
     FetchSpotyArtistTask spotify;
     EditText inputSearch;
+    static final int PICK_CONTACT_REQUEST = 1;  // The request code
 
     public SearchFragment() {
     }
@@ -42,20 +46,13 @@ public class SearchFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-        //doSearch();
-        String [] listAlbums = {};
         List<Artist> lista = new ArrayList<>();
-        // Now that we have some dummy forecast data, create an ArrayAdapter.
-        // The ArrayAdapter will take data from a source (like our dummy forecast) and
-        // use it to populate the ListView it's attached to.
         mSpotifyAdapter =
                 new ArtistAdapter(getActivity(),
                         R.layout.list_item_spotify, // The current context (this activity)
                         lista);
         ListView listView = (ListView) rootView.findViewById(R.id.listview_spotify);
         listView.setAdapter(mSpotifyAdapter);
-
-
         try {
             doSearch(rootView);
         }catch (Exception e)
@@ -63,22 +60,54 @@ public class SearchFragment extends Fragment {
             Log.e("ERRRRRRRORRRRRRRR", e.toString() + " " + e.getMessage());
 
         }
-
         return rootView;
-
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // Add this line in order for this fragment to handle menu events.
-        //setHasOptionsMenu(true);
+        setHasOptionsMenu(true);
     }
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.searchfragment, menu);
         super.onCreateOptionsMenu(menu, inflater);
+    }
+
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+        if (id == R.id.action_popular) {
+            if (mSpotifyAdapter.getCount() == 0) {
+                int duration = Toast.LENGTH_SHORT;
+                Toast.makeText(getActivity(),getString(R.string.noalbums_message) , duration).show();
+            }else {
+                Intent downloadIntent = new Intent(getActivity(), PopularActivity.class);
+                downloadIntent.putExtra("Artist", inputSearch.getText().toString());
+                startActivityForResult(downloadIntent, PICK_CONTACT_REQUEST );
+            }
+
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public  void onActivityResult(int requestCode, int resultCode,
+                                    Intent data) {
+        if (requestCode == PICK_CONTACT_REQUEST) {
+            if (resultCode == getActivity().RESULT_OK) {
+                // A contact was picked.  Here we will just display it
+                // to the user.
+                inputSearch.setText(data.getExtras().getString("Artis"));
+            }
+        }
     }
 
     private void doSearch(View rootView) {
@@ -103,17 +132,12 @@ public class SearchFragment extends Fragment {
                 }
             }
         });
-
-
     }
 
     public class FetchSpotyArtistTask extends AsyncTask<String, Void,  List<Artist>> {
 
         private final String LOG_TAG = FetchSpotyArtistTask.class.getSimpleName();
 
-        /* The date/time conversion code is going to be moved outside the asynctask later,
-             * so for convenience we're breaking it out into its own method now.
-             */
         private String getDataFromArtist(Artist artista){
             return artista.name;
         }
@@ -130,16 +154,6 @@ public class SearchFragment extends Fragment {
             ArtistsPager results = spotify.searchArtists(params[0]);
             Pager<Artist> artist =  results.artists;
             List<Artist> lista = artist.items;
-            /* String[] resultNames = new String[lista.size()];
-            Integer[] resultImages = new Integer[lista.size()];
-            int index = 0;
-            for (Artist artista: lista) {
-                resultNames[index] = getDataFromArtist(artista);
-                List<Image> images = artista.images;
-                if (images.size() > 0)
-                    Object image = images.get(0);
-                index++;
-            }*/
             Log.v(LOG_TAG, "Spotify string: " + lista.toString());
             return lista;
         }
@@ -148,10 +162,14 @@ public class SearchFragment extends Fragment {
         protected void onPostExecute(List<Artist> result) {
             if (result != null) {
                 mSpotifyAdapter.clear();
-                for(Artist artista : result) {
-                    mSpotifyAdapter.add(artista);
+                if (result.size() == 0) {
+                    int duration = Toast.LENGTH_SHORT;
+                    Toast.makeText(getActivity(),getString(R.string.noalbums_message) , duration).show();
+                } else {
+                    for (Artist artista : result) {
+                        mSpotifyAdapter.add(artista);
+                    }
                 }
-                // New data is back from the server.  Hooray!
             }
         }
 

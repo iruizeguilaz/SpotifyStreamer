@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:orientation="horizontal">
+
+    <ImageView
+        android:id="@+id/list_item_popular_imageview"
+        android:layout_width="130dp"
+        android:layout_height="130dp"
+        android:background="@color/white"
+        android:padding="10dp"
+        />
+
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:orientation="vertical"
+        >
+
+        <TextView xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="25dp"
+            android:paddingRight="25dp"
+            android:textSize="17dip"
+            android:textStyle="bold"
+            android:background="@color/white"
+            android:gravity="center_horizontal"
+            android:minHeight="?android:attr/listPreferredItemHeight"
+            android:id="@+id/list_item_album_textview"
+            />
+
+        <TextView xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="25dp"
+            android:paddingRight="25dp"
+            android:textSize="17dip"
+            android:textStyle="bold"
+            android:background="@color/white"
+            android:gravity="center_horizontal"
+            android:minHeight="?android:attr/listPreferredItemHeight"
+            android:id="@+id/list_item_track_textview"
+            />
+
+    </LinearLayout>
+</LinearLayout>

@@ -8,22 +8,23 @@
         android:allowBackup="true"
         android:icon="@drawable/spotify"
         android:label="@string/app_name"
-        android:theme="@style/CustomActionBarTheme"
-       >
-        <!-- android:background="@color/red"
-        android:logo="@drawable/spotify"-->
-
-
+        android:theme="@style/CustomActionBarTheme" >
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name" >
-    <!--android:logo="@drawable/spotify"-->
-
-    <intent-filter>
-        <action android:name="android.intent.action.MAIN" />
-        <category android:name="android.intent.category.LAUNCHER" />
-    </intent-filter>
-</activity>
-</application>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".PopularActivity"
+            android:label="@string/title_activity_popular_fragnmet"
+            android:parentActivityName=".MainActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.nanodegree.ivan.spotifystreamer.MainActivity" />
+        </activity>
+    </application>
 
 </manifest>
