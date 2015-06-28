@@ -54,7 +54,8 @@ public class SearchFragment extends Fragment {
             public void onItemClick(AdapterView<?> adapter, View view, int position, long id) {
                 Artist value = mSpotifyAdapter.getItem(position);
                 Intent downloadIntent = new Intent(getActivity(), PopularActivity.class);
-                downloadIntent.putExtra("Artist", value.id);
+                downloadIntent.putExtra("ArtistID", value.id);
+                downloadIntent.putExtra("ArtistName", value.name);
                 startActivity(downloadIntent);
             }
         });

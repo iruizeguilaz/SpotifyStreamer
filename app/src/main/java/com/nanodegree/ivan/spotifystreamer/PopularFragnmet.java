@@ -1,9 +1,15 @@
 package com.nanodegree.ivan.spotifystreamer;
 
+
+
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
+
+
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -28,10 +34,20 @@ public class PopularFragnmet extends Fragment {
 
     private TrackAdapter mSpotifyAdapter;
     FetchSpotyTraskTask spotify;
-    private String artista;
+    private String artistaID;
+    private String artistaName = "Artist";
 
     public PopularFragnmet() {
     }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        AppCompatActivity activity = (AppCompatActivity) getActivity();
+        ActionBar actionBar = activity.getSupportActionBar();
+        actionBar.setSubtitle(artistaName);
+    }
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -47,12 +63,15 @@ public class PopularFragnmet extends Fragment {
         listView.setAdapter(mSpotifyAdapter);
 
         Intent intent = getActivity().getIntent();
-        artista = intent.getStringExtra("Artist");
+        artistaID = intent.getStringExtra("ArtistID");
+        artistaName = intent.getStringExtra("ArtistName");
+
+
 
         if (spotify != null) spotify.cancel(true);
-        if (!artista.equals("")) {
+        if (!artistaID.equals("")) {
             spotify = new FetchSpotyTraskTask();
-            spotify.execute(artista);
+            spotify.execute(artistaID);
         } else {
             if (mSpotifyAdapter != null) mSpotifyAdapter.clear();
         }
