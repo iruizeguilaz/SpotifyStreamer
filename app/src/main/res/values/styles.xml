@@ -2,24 +2,22 @@
 
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <item name="android:actionBarStyle">@style/MyActionBar2</item>
+        <item name="android:actionBarStyle">@style/MyActionBar</item>
     </style>
 
     <style name="CustomActionBarTheme" parent="@style/Theme.AppCompat.Light">
-        <item name="android:actionBarStyle"   tools:ignore="NewApi">@style/MyActionBar2</item>
-        <item name="actionBarStyle">@style/MyActionBar2</item>
+        <item name="android:actionBarStyle"   tools:ignore="NewApi">@style/MyActionBar</item>
+        <item name="actionBarStyle">@style/MyActionBar</item>
 
     </style>
 
-    <style name="MyActionBar2" parent="@style/Widget.AppCompat.Light.ActionBar.Solid.Inverse">
+    <style name="MyActionBar" parent="@style/Widget.AppCompat.Light.ActionBar.Solid.Inverse">
         <item name="android:background"  tools:ignore="NewApi">@color/red</item>
         <item name="background">@color/red</item>
         <item name="android:logo"  tools:ignore="NewApi">@drawable/spotify</item>
         <item name="logo">@drawable/spotify</item>
     </style>
 
-    <style name="MyActionBar" parent="Theme.AppCompat.Light.DarkActionBar">
-        <item name="android:background">@color/red</item>
-    </style>
+
 
 </resources>

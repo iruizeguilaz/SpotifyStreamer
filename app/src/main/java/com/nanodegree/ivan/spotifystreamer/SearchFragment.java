@@ -9,11 +9,9 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -25,7 +23,6 @@ import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyService;
 import kaaes.spotify.webapi.android.models.Artist;
 import kaaes.spotify.webapi.android.models.ArtistsPager;
-import kaaes.spotify.webapi.android.models.Image;
 import kaaes.spotify.webapi.android.models.Pager;
 
 
@@ -37,7 +34,6 @@ public class SearchFragment extends Fragment {
     private ArtistAdapter mSpotifyAdapter;
     FetchSpotyArtistTask spotify;
     EditText inputSearch;
-    static final int PICK_CONTACT_REQUEST = 1;  // The request code
 
     public SearchFragment() {
     }
@@ -53,12 +49,20 @@ public class SearchFragment extends Fragment {
                         lista);
         ListView listView = (ListView) rootView.findViewById(R.id.listview_spotify);
         listView.setAdapter(mSpotifyAdapter);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapter, View view, int position, long id) {
+                Artist value = mSpotifyAdapter.getItem(position);
+                Intent downloadIntent = new Intent(getActivity(), PopularActivity.class);
+                downloadIntent.putExtra("Artist", value.id);
+                startActivity(downloadIntent);
+            }
+        });
         try {
             doSearch(rootView);
         }catch (Exception e)
         {
-            Log.e("ERRRRRRRORRRRRRRR", e.toString() + " " + e.getMessage());
-
+            Log.e("onCreateView", e.toString() + " " + e.getMessage());
         }
         return rootView;
     }
@@ -66,48 +70,6 @@ public class SearchFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // Add this line in order for this fragment to handle menu events.
-        setHasOptionsMenu(true);
-    }
-
-    @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        inflater.inflate(R.menu.searchfragment, menu);
-        super.onCreateOptionsMenu(menu, inflater);
-    }
-
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-        if (id == R.id.action_popular) {
-            if (mSpotifyAdapter.getCount() == 0) {
-                int duration = Toast.LENGTH_SHORT;
-                Toast.makeText(getActivity(),getString(R.string.noalbums_message) , duration).show();
-            }else {
-                Intent downloadIntent = new Intent(getActivity(), PopularActivity.class);
-                downloadIntent.putExtra("Artist", inputSearch.getText().toString());
-                startActivityForResult(downloadIntent, PICK_CONTACT_REQUEST );
-            }
-
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    public  void onActivityResult(int requestCode, int resultCode,
-                                    Intent data) {
-        if (requestCode == PICK_CONTACT_REQUEST) {
-            if (resultCode == getActivity().RESULT_OK) {
-                // A contact was picked.  Here we will just display it
-                // to the user.
-                inputSearch.setText(data.getExtras().getString("Artis"));
-            }
-        }
     }
 
     private void doSearch(View rootView) {
@@ -154,7 +116,8 @@ public class SearchFragment extends Fragment {
             ArtistsPager results = spotify.searchArtists(params[0]);
             Pager<Artist> artist =  results.artists;
             List<Artist> lista = artist.items;
-            Log.v(LOG_TAG, "Spotify string: " + lista.toString());
+
+            Log.v(LOG_TAG, lista.toString());
             return lista;
         }
 
@@ -172,10 +135,5 @@ public class SearchFragment extends Fragment {
                 }
             }
         }
-
-
-
     }
-
-
 }

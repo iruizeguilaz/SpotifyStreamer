@@ -4,25 +4,22 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
-import android.support.v4.app.NavUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 
 import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyService;
-import kaaes.spotify.webapi.android.models.Pager;
 import kaaes.spotify.webapi.android.models.Track;
-import kaaes.spotify.webapi.android.models.TracksPager;
+import kaaes.spotify.webapi.android.models.Tracks;
 
 /**
  * A placeholder fragment containing a simple view.
@@ -35,26 +32,6 @@ public class PopularFragnmet extends Fragment {
 
     public PopularFragnmet() {
     }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home:
-                Intent data = new Intent();
-                data.putExtra("Artist", artista);
-                getActivity().setResult(getActivity().RESULT_OK, data);
-                getActivity().finish();
-                return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        inflater.inflate(R.menu.menu_popular_fragment, menu);
-        super.onCreateOptionsMenu(menu, inflater);
-    }
-
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -81,6 +58,7 @@ public class PopularFragnmet extends Fragment {
         }
         return rootView;
     }
+
     public class FetchSpotyTraskTask extends AsyncTask<String, Void, List<Track>> {
 
         private final String LOG_TAG = FetchSpotyTraskTask.class.getSimpleName();
@@ -95,10 +73,12 @@ public class PopularFragnmet extends Fragment {
             }
             SpotifyApi api = new SpotifyApi();
             SpotifyService spotify = api.getService();
-            TracksPager results = spotify.searchTracks(params[0]);
-            Pager<Track> track = results.tracks;
-            List<Track> lista = track.items;
-            Log.v(LOG_TAG, "Spotify string: " + lista.toString());
+            HashMap<String,Object> queryString = new HashMap<>();
+            queryString.put(SpotifyService.COUNTRY, Locale.getDefault().getCountry());
+
+            Tracks tracks = spotify.getArtistTopTrack(params[0], queryString);
+            List<Track> lista = tracks.tracks;
+            Log.v(LOG_TAG, lista.toString());
             return lista;
         }
 
@@ -108,7 +88,7 @@ public class PopularFragnmet extends Fragment {
                 mSpotifyAdapter.clear();
                 if (result.size() == 0) {
                     int duration = Toast.LENGTH_SHORT;
-                    Toast.makeText(getActivity(), getString(R.string.noalbums_message), duration).show();
+                    Toast.makeText(getActivity(), getString(R.string.notracks_message), duration).show();
                 } else {
                     for (Track track : result) {
                         mSpotifyAdapter.add(track);
