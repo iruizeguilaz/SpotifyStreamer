@@ -39,6 +39,11 @@ public class PlayerDialogFragment extends DialogFragment  implements View.OnClic
     boolean mBound = false;
     ForegroundService mediaPlayerService;
 
+    private static final String ACTION_PLAY = "com.example.action.PLAY";
+    private static final String ACTION_PAUSE = "com.example.action.PAUSE";
+    private static final String ACTION_NEXT = "com.example.action.NEXT";
+    private static final String ACTION_PREVIOUS = "com.example.action.PREVIOUS";
+
     public static PlayerDialogFragment newInstance(ArrayList<TrackParcelable> listaTracks, int position, String artistName) {
         PlayerDialogFragment fm = new PlayerDialogFragment();
         Bundle bundle = new Bundle();
@@ -71,6 +76,8 @@ public class PlayerDialogFragment extends DialogFragment  implements View.OnClic
         myButton = (ImageButton) myView.findViewById(R.id.player_next);
         myButton.setOnClickListener(this);
 
+
+
         return myView;
     }
 
@@ -79,6 +86,19 @@ public class PlayerDialogFragment extends DialogFragment  implements View.OnClic
         super.onActivityCreated(savedInstanceState);
 
         LoadTrack();
+
+        Intent sendIntent = new Intent(getActivity(), ForegroundService.class);
+        //sendIntent.putExtra("URL", trackUrl);
+        //sendIntent.setAction(ACTION_PLAY);
+        getActivity().startService(sendIntent);
+        getActivity().bindService(sendIntent, mConnection, getActivity().BIND_AUTO_CREATE);
+    }
+
+    @Override
+    public void onDestroyView() {
+        getActivity().unbindService(mConnection);
+        super.onDestroyView();
+
     }
 
     private void LoadTrack()
@@ -124,9 +144,8 @@ public class PlayerDialogFragment extends DialogFragment  implements View.OnClic
         public void onServiceConnected(ComponentName className,
                                        IBinder service) {
             // We've bound to LocalService, cast the IBinder and get LocalService instance
-            ForegroundService.ForegroundServiceBinder binder = (ForegroundService.ForegroundServiceBinder) service;
-            mediaPlayerService = binder.getService();
-            
+            mediaPlayerService = ((ForegroundService.ForegroundServiceBinder) service).getService();
+            mediaPlayerService.setTracks(listaTracks, currentPosition);
             mBound = true;
         }
 
@@ -144,25 +163,23 @@ public class PlayerDialogFragment extends DialogFragment  implements View.OnClic
             ImageButton playButton = (ImageButton) getActivity().findViewById(R.id.player_play);
             playButton.setVisibility(View.VISIBLE);
 
-
-
+            mediaPlayerService.songEvents(ACTION_PAUSE);
         }
         if (button.getId() == R.id.player_play){
-
             button.setVisibility(View.GONE);
             ImageButton pauseButton = (ImageButton) getActivity().findViewById(R.id.player_pause);
             pauseButton.setVisibility(View.VISIBLE);
 
-            Intent sendIntent = new Intent(getActivity(), ForegroundService.class);
-            sendIntent.putExtra("URL", trackUrl);
-            sendIntent.setAction("com.example.action.PLAY");
-            //getActivity().startService(sendIntent);
-            getActivity().bindService(sendIntent, mConnection, getActivity().BIND_AUTO_CREATE);
+            mediaPlayerService.songEvents(ACTION_PLAY);
         }
-
+        if (button.getId() == R.id.player_next){
+            mediaPlayerService.songEvents(ACTION_NEXT);
+        }
+        if (button.getId() == R.id.player_previous){
+            mediaPlayerService.songEvents(ACTION_PREVIOUS);
+        }
         // implements your things
     }
-
 
 
 

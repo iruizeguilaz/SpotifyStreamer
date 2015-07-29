@@ -17,7 +17,10 @@ import android.util.Log;
 
 import com.nanodegree.ivan.spotifystreamer.MainActivity;
 import com.nanodegree.ivan.spotifystreamer.R;
+import com.nanodegree.ivan.spotifystreamer.parceable.TrackParcelable;
+
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class ForegroundService extends Service implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener,
         MediaPlayer.OnCompletionListener{
@@ -25,6 +28,9 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
 
     private static final String ACTION_PLAY = "com.example.action.PLAY";
     private static final String ACTION_PAUSE = "com.example.action.PAUSE";
+    private static final String ACTION_NEXT = "com.example.action.NEXT";
+    private static final String ACTION_PREVIOUS = "com.example.action.PREVIOUS";
+
     final static String TAG = "ForegroundService";
     MediaPlayer mMediaPlayer = null;
     NotificationManager mNotificationManager;
@@ -32,6 +38,20 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
     WifiManager.WifiLock mWifiLock;
     String trackURL;
     int trackPosition;
+    private ArrayList<TrackParcelable> listaTracks;
+
+    // indicates the state our service:
+    enum State {
+        Retrieving, // the MediaRetriever is retrieving music
+        Stopped,    // media player is stopped and not prepared to play
+        Preparing,  // media player is preparing...
+        Playing,    // playback active (media player ready!). (but the media player may actually be
+        // paused in this state if we don't have audio focus. But we stay in this state
+        // so that we know we have to resume playback once we get focus back)
+        Paused      // playback paused (media player ready!)
+    };
+
+    State mState = State.Retrieving;
 
     private final IBinder mBinder = new ForegroundServiceBinder();
 
@@ -55,30 +75,92 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
     public boolean onError(MediaPlayer mp, int what, int extra) {
         // ... react appropriately ...
         // The MediaPlayer has moved to the Error state, must be reset!
+
         mMediaPlayer.reset();
         return true;
     }
 
-    public void setSong(String url, int position){
-        trackURL=url;
-        trackPosition=position;
+    public void songEvents(String action)
+    {
+        switch (action) {
+            case ACTION_PLAY:
+                // si esta en pause o no, retomar o empezar
+                if (mState == State.Retrieving)
+                {
+                    playSong();
+                }
+                if (mState == State.Paused)
+                {
+                    mMediaPlayer.start();
+                    mState = State.Playing;
+                }
+                break;
+            case ACTION_PAUSE:
+                // definir unos estados
+                mMediaPlayer.pause();
+                mState = State.Paused;
+                break;
+            case ACTION_NEXT:
+                nextSong();
+                break;
+            case ACTION_PREVIOUS:
+                previousSong();
+                break;
+        }
     }
 
+    private void previousSong() {
+        if (trackPosition > 0) {
+            trackPosition--;
+            playSong();
+        }
+    }
+
+    public void nextSong() {
+        if (++trackPosition >= listaTracks.size()) {
+            // Last song, just reset currentPosition
+            trackPosition = 0;
+        } else {
+            // Play next song
+            playSong();
+        }
+    }
+
+    private void playSong() {
+        try {
+            if (mMediaPlayer.isPlaying()) mMediaPlayer.stop();
+            mMediaPlayer.reset();
+            mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            mMediaPlayer.setDataSource(listaTracks.get(trackPosition).getTrack().preview_url);
+            mMediaPlayer.prepareAsync();
+            //mMediaPlayer.start();
+            // Setup listener so next song starts automatically
+            mState = State.Playing;
+        } catch (IOException e) {
+            Log.v(TAG, e.getMessage());
+            mState = State.Retrieving;
+        }
+    }
+
+    public void setTracks(ArrayList<TrackParcelable> listaTracks, int position){
+        this.listaTracks=listaTracks;
+        trackPosition=position;
+    }
     /**
      * Makes sure the media player exists and has been reset. This will create the media player
      * if needed, or reset the existing media player if one already exists.
      */
     void createMediaPlayerIfNeeded() {
-        if (mMediaPlayer == null) {
+        //if (mMediaPlayer == null) {
             mMediaPlayer = new MediaPlayer();
             mMediaPlayer.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
             mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
             mMediaPlayer.setOnPreparedListener(this);
             mMediaPlayer.setOnCompletionListener(this);
             mMediaPlayer.setOnErrorListener(this);
-        }
-        else
-            mMediaPlayer.reset();
+       // }
+        //else
+          //  mMediaPlayer.reset();
     }
 
     public class ForegroundServiceBinder extends Binder {
@@ -92,7 +174,7 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
         return mBinder;
     }
 
-
+/*
     public int onStartCommand(Intent intent, int flags, int startId) {
         Bundle extras = intent.getExtras();
 
@@ -114,7 +196,7 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
         return START_STICKY;
     }
 
-
+*/
     private void setUpAsForeground(String text) {
         PendingIntent pi = PendingIntent.getActivity(getApplicationContext(), 0,
                 new Intent(getApplicationContext(), MainActivity.class),
@@ -136,7 +218,10 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
 
     @Override
     public void onDestroy() {
-        if (mMediaPlayer != null) mMediaPlayer.release();
+        if (mMediaPlayer != null) {
+            mMediaPlayer.release();
+            mMediaPlayer = null;
+        }
         mWifiLock.release();
         //mState = State.Stopped;
     }
@@ -147,10 +232,8 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
     }
 
 
-
     @Override
     public void onCompletion(MediaPlayer mp) {
-        // TODO Auto-generated method stub
-
+        nextSong();
     }
 }
