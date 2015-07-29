@@ -23,6 +23,12 @@ public class TrackAdapter extends ArrayAdapter<Track> {
     private final Activity context;
     private List<Track> tracks;
 
+    static class ViewHolder {
+        ImageView imageView;
+        TextView albumName;
+        TextView trackName;
+    }
+
     public TrackAdapter(Activity context,
                         int resource, List<Track> tracks) {
 
@@ -35,27 +41,31 @@ public class TrackAdapter extends ArrayAdapter<Track> {
 
     @Override
     public View getView(int position, View view, ViewGroup parent) {
-        LayoutInflater inflater = (LayoutInflater) context.getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
+        View rowView = view;
+        if (rowView == null)
+        {
+            LayoutInflater inflater = (LayoutInflater) context.getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
+            rowView= inflater.inflate(R.layout.list_item_popular, null, true);
+            ViewHolder holder = new ViewHolder();
+            holder.albumName = (TextView) rowView.findViewById(R.id.list_item_album_textview);
+            holder.trackName = (TextView) rowView.findViewById(R.id.list_item_track_textview);
+            holder.imageView = (ImageView) rowView.findViewById(R.id.list_item_popular_imageview);
+            rowView.setTag(holder);
+        }
+        ViewHolder holder = (ViewHolder) rowView.getTag();
         Track track = tracks.get(position);
-
-
-        View rowView= inflater.inflate(R.layout.list_item_popular, null, true);
-        ImageView imageView = (ImageView) rowView.findViewById(R.id.list_item_popular_imageview);
         String url = null;
         List<Image> images = track.album.images;
         if (images != null && !images.isEmpty()) {
             url = images.get(0).url;
-            Picasso.with(context).load(url).into(imageView);
+            Picasso.with(context).load(url).into(holder.imageView);
 
         }else{
-            imageView.setImageResource(R.drawable.spotify);
+            holder.imageView.setImageResource(R.drawable.spotify);
 
         }
-        TextView albumName = (TextView) rowView.findViewById(R.id.list_item_album_textview);
-        albumName.setText(track.album.name);
-
-        TextView trackName = (TextView) rowView.findViewById(R.id.list_item_track_textview);
-        trackName.setText(track.name);
+        holder.albumName.setText(track.album.name);
+        holder.trackName.setText(track.name);
 
         return rowView;
     }

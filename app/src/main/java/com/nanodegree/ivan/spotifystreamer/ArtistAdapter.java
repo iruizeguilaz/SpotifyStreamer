@@ -30,6 +30,12 @@ public class ArtistAdapter extends ArrayAdapter<Artist> {
     private final Activity context;
     private List<Artist> artists;
 
+
+    static class ViewHolder {
+        ImageView imageView;
+        TextView artistName;
+    }
+
     public ArtistAdapter(Activity context,
                          int resource, List<Artist> artists) {
 
@@ -41,23 +47,27 @@ public class ArtistAdapter extends ArrayAdapter<Artist> {
 
     @Override
     public View getView(int position, View view, ViewGroup parent) {
-        LayoutInflater inflater = (LayoutInflater) context.getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
+        View rowView = view;
+        if (rowView == null)
+        {
+            LayoutInflater inflater = (LayoutInflater) context.getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
+            rowView= inflater.inflate(R.layout.list_item_spotify, null, true);
+            ViewHolder holder = new ViewHolder();
+            holder.artistName = (TextView) rowView.findViewById(R.id.list_item_spotify_textview);
+            holder.imageView = (ImageView) rowView.findViewById(R.id.list_item_spotify_imageview);
+            rowView.setTag(holder);
+        }
         Artist artist = artists.get(position);
-
-
-        View rowView= inflater.inflate(R.layout.list_item_spotify, null, true);
-        ImageView imageView = (ImageView) rowView.findViewById(R.id.list_item_spotify_imageview);
+        ViewHolder holder = (ViewHolder) rowView.getTag();
         String url = null;
         List<Image> images = artist.images;
         if (images != null && !images.isEmpty()) {
             url = images.get(0).url;
-            Picasso.with(context).load(url).into(imageView);
+            Picasso.with(context).load(url).into(holder.imageView);
         }else{
-            imageView.setImageResource(R.drawable.spotify);
+            holder.imageView.setImageResource(R.drawable.spotify);
         }
-        TextView artistName = (TextView) rowView.findViewById(R.id.list_item_spotify_textview);
-        artistName.setText(artist.name);
-
+        holder.artistName.setText(artist.name);
         return rowView;
     }
 }

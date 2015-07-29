@@ -40,8 +40,16 @@ public class SearchFragment extends Fragment {
     private ArtistAdapter mSpotifyAdapter;
     FetchSpotyArtistTask spotify;
     EditText inputSearch;
+    ListView listView;
 
     public SearchFragment() {
+    }
+
+    public interface Callback {
+        /**
+         * DetailFragmentCallback for when an item has been selected.
+         */
+        public void onItemSelected(Artist value);
     }
 
     @Override
@@ -59,16 +67,20 @@ public class SearchFragment extends Fragment {
                 new ArtistAdapter(getActivity(),
                         R.layout.list_item_spotify, // The current context (this activity)
                         lista);
-        ListView listView = (ListView) rootView.findViewById(R.id.listview_spotify);
+        listView = (ListView) rootView.findViewById(R.id.listview_spotify);
         listView.setAdapter(mSpotifyAdapter);
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapter, View view, int position, long id) {
+
                 Artist value = mSpotifyAdapter.getItem(position);
-                Intent downloadIntent = new Intent(getActivity(), PopularActivity.class);
-                downloadIntent.putExtra("ArtistID", value.id);
-                downloadIntent.putExtra("ArtistName", value.name);
-                startActivity(downloadIntent);
+                //Intent downloadIntent = new Intent(getActivity(), PopularActivity.class);
+                //downloadIntent.putExtra("ArtistID", value.id);
+                //downloadIntent.putExtra("ArtistName", value.name);
+                //startActivity(downloadIntent);
+
+                ((Callback) getActivity()).onItemSelected(value);
+
             }
         });
         try {
@@ -139,6 +151,10 @@ public class SearchFragment extends Fragment {
                 } else {
                     for (Artist artista : result) {
                         mSpotifyAdapter.add(artista);
+                    }
+                    if (((MainActivity)getActivity()).mTwoPane) {
+                        listView.setItemChecked(0, true);
+                        ((Callback) getActivity()).onItemSelected(result.get(0));
                     }
                 }
             }

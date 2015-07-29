@@ -7,5 +7,6 @@
     <string name="notracks_message">There are no tracks for this artits. Please, refine the search.</string>
     <string name="action_popular">Popular</string>
     <string name="title_activity_popular_fragnmet">Top 10 Tracks</string>
+    <string name="title_activity_player">PlayerActivity</string>
 
 </resources>

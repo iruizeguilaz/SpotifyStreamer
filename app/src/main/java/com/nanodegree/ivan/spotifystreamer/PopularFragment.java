@@ -2,20 +2,26 @@ package com.nanodegree.ivan.spotifystreamer;
 
 
 
+
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 
 
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
+
+import com.nanodegree.ivan.spotifystreamer.parceable.TrackParcelable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,14 +36,15 @@ import kaaes.spotify.webapi.android.models.Tracks;
 /**
  * A placeholder fragment containing a simple view.
  */
-public class PopularFragnmet extends Fragment {
+public class PopularFragment extends Fragment {
 
     private TrackAdapter mSpotifyAdapter;
     FetchSpotyTraskTask spotify;
     private String artistaID;
     private String artistaName = "Artist";
+    private boolean mTwoPane;
 
-    public PopularFragnmet() {
+    public PopularFragment() {
     }
 
     @Override
@@ -55,21 +62,49 @@ public class PopularFragnmet extends Fragment {
 
         View rootView = inflater.inflate(R.layout.fragment_popular, container, false);
         List<Track> lista = new ArrayList<>();
-        mSpotifyAdapter =
-                new TrackAdapter(getActivity(),
-                        R.layout.list_item_popular,
-                        lista);
-        ListView listView = (ListView) rootView.findViewById(R.id.listview_popular);
-        listView.setAdapter(mSpotifyAdapter);
+        if (mSpotifyAdapter == null) {
+            mSpotifyAdapter =
+                    new TrackAdapter(getActivity(),
+                            R.layout.list_item_popular,
+                            lista);
+            ListView listView = (ListView) rootView.findViewById(R.id.listview_popular);
+            listView.setAdapter(mSpotifyAdapter);
+            listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> adapter, View view, int position, long id) {
 
-        Intent intent = getActivity().getIntent();
-        artistaID = intent.getStringExtra("ArtistID");
-        artistaName = intent.getStringExtra("ArtistName");
+                    ArrayList<TrackParcelable> listaTracks = new ArrayList<TrackParcelable>();
+                    for (int index = 0; index < mSpotifyAdapter.getCount(); index++)
+                    {
+                        listaTracks.add( new TrackParcelable( mSpotifyAdapter.getItem(index)));
+                    }
+                    FragmentManager fm = getActivity().getSupportFragmentManager();
+                    PlayerDialogFragment myPlayer = new PlayerDialogFragment().newInstance(listaTracks, position ,artistaName);
 
+                    if (!mTwoPane) {
+                        FragmentTransaction transaction = fm.beginTransaction();
+                        transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
+                        transaction.add(android.R.id.content, myPlayer).addToBackStack(null).commit();
+                    } else {
+                        myPlayer.show(fm, "dialog");
+                    }
 
-
+                }
+            });
+        }
+        Bundle arguments = getArguments();
+        if (arguments != null) {
+            artistaID = arguments.getString("ArtistID");
+            artistaName = arguments.getString("ArtistName");
+            mTwoPane = true;
+        }else {
+            Intent intent = getActivity().getIntent();
+            artistaID = intent.getStringExtra("ArtistID");
+            artistaName = intent.getStringExtra("ArtistName");
+            mTwoPane = false;
+        }
         if (spotify != null) spotify.cancel(true);
-        if (!artistaID.equals("")) {
+        if (artistaID != null && !artistaID.equals("")) {
             spotify = new FetchSpotyTraskTask();
             spotify.execute(artistaID);
         } else {
