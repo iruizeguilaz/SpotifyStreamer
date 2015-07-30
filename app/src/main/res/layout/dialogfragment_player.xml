@@ -4,6 +4,8 @@
     android:background="#BDBDBD"
     android:orientation="vertical"
     android:clickable="true"
+    style="@style/DialgoMinWithStyle"
+
     tools:context="com.nanodegree.ivan.spotifystreamer.PlayerDialogFragment">
 
     <TextView xmlns:android="http://schemas.android.com/apk/res/android"
@@ -56,9 +58,10 @@
         />
 
     <SeekBar
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/seekBar"
+        android:layout_centerInParent="true"
         />
 
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"

@@ -13,6 +13,7 @@ import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.os.ResultReceiver;
 import android.util.Log;
 
 import com.nanodegree.ivan.spotifystreamer.MainActivity;
@@ -24,6 +25,10 @@ import java.util.ArrayList;
 
 public class ForegroundService extends Service implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener,
         MediaPlayer.OnCompletionListener{
+
+    private final int RESPONSE_END = 0;
+    private final int RESPONSE_PAUSE = 1;
+    private final int RESPONSE_PLAY = 2;
 
 
     private static final String ACTION_PLAY = "com.example.action.PLAY";
@@ -39,6 +44,7 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
     String trackURL;
     int trackPosition;
     private ArrayList<TrackParcelable> listaTracks;
+    ResultReceiver resultReceiver;
 
     // indicates the state our service:
     enum State {
@@ -62,13 +68,28 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
 
     public void initMediaPlayer() {
         // ...initialize the MediaPlayer here...
-        createMediaPlayerIfNeeded();
+        createMediaPlayer();
         mWifiLock = ((WifiManager) getSystemService(Context.WIFI_SERVICE))
                 .createWifiLock(WifiManager.WIFI_MODE_FULL, "mylock");
         mWifiLock.acquire();
-
         //mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+    }
 
+    public MediaPlayer getmMediaPlayer()
+    {
+        return mMediaPlayer;
+    }
+
+    public int getActualSongTime()
+    {
+        if (mMediaPlayer.isPlaying()) return mMediaPlayer.getCurrentPosition();
+        return 0;
+    }
+
+    public int getTotalSongTime()
+    {
+        if (mMediaPlayer.isPlaying()) return mMediaPlayer.getDuration();
+        return 0;
     }
 
     @Override
@@ -93,12 +114,23 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
                 {
                     mMediaPlayer.start();
                     mState = State.Playing;
+                    Bundle resultData = new Bundle();
+                    resultData.putInt("CurrentTrack", trackPosition);
+                    resultReceiver.send(RESPONSE_PLAY, resultData);
+                }
+                if (mState == State.Stopped)
+                {
+                    createMediaPlayer();
+                    playSong();
                 }
                 break;
             case ACTION_PAUSE:
-                // definir unos estados
+                Bundle resultData = new Bundle();
+                int currentTime = mMediaPlayer.getCurrentPosition();
+                resultData.putInt("CurrentTime", currentTime);
                 mMediaPlayer.pause();
                 mState = State.Paused;
+                resultReceiver.send(RESPONSE_PAUSE, resultData);
                 break;
             case ACTION_NEXT:
                 nextSong();
@@ -110,20 +142,14 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
     }
 
     private void previousSong() {
-        if (trackPosition > 0) {
-            trackPosition--;
-            playSong();
-        }
+        if (trackPosition > 0) trackPosition--;
+        else trackPosition = listaTracks.size() -1;
+        playSong();
     }
 
     public void nextSong() {
-        if (++trackPosition >= listaTracks.size()) {
-            // Last song, just reset currentPosition
-            trackPosition = 0;
-        } else {
-            // Play next song
-            playSong();
-        }
+        if (++trackPosition >= listaTracks.size()) trackPosition = 0;
+        playSong();
     }
 
     private void playSong() {
@@ -133,8 +159,6 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
             mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
             mMediaPlayer.setDataSource(listaTracks.get(trackPosition).getTrack().preview_url);
             mMediaPlayer.prepareAsync();
-            //mMediaPlayer.start();
-            // Setup listener so next song starts automatically
             mState = State.Playing;
         } catch (IOException e) {
             Log.v(TAG, e.getMessage());
@@ -145,22 +169,25 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
     public void setTracks(ArrayList<TrackParcelable> listaTracks, int position){
         this.listaTracks=listaTracks;
         trackPosition=position;
+        if (mMediaPlayer != null && mMediaPlayer.isPlaying()) {
+            mMediaPlayer.stop();
+            mMediaPlayer.reset();
+            mMediaPlayer.release();
+            mMediaPlayer = null;
+            mState = State.Stopped;
+        }
     }
     /**
      * Makes sure the media player exists and has been reset. This will create the media player
      * if needed, or reset the existing media player if one already exists.
      */
-    void createMediaPlayerIfNeeded() {
-        //if (mMediaPlayer == null) {
+    void createMediaPlayer() {
             mMediaPlayer = new MediaPlayer();
             mMediaPlayer.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
             mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
             mMediaPlayer.setOnPreparedListener(this);
             mMediaPlayer.setOnCompletionListener(this);
             mMediaPlayer.setOnErrorListener(this);
-       // }
-        //else
-          //  mMediaPlayer.reset();
     }
 
     public class ForegroundServiceBinder extends Binder {
@@ -171,32 +198,11 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
 
     @Override
     public IBinder onBind(Intent intent) {
+        resultReceiver = intent.getParcelableExtra("Receiver");
+
         return mBinder;
     }
 
-/*
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        Bundle extras = intent.getExtras();
-
-        if (intent.getAction().equals(ACTION_PLAY)) {
-
-
-            try {
-                mMediaPlayer.setDataSource(extras.getString("URL"));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            //mMediaPlayer.setOnPreparedListener(this);
-            mMediaPlayer.prepareAsync(); // prepare async to not block main thread
-        }
-        if (intent.getAction().equals(ACTION_PAUSE)) {
-            mMediaPlayer.pause();
-        }
-
-        return START_STICKY;
-    }
-
-*/
     private void setUpAsForeground(String text) {
         PendingIntent pi = PendingIntent.getActivity(getApplicationContext(), 0,
                 new Intent(getApplicationContext(), MainActivity.class),
@@ -219,6 +225,7 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
     @Override
     public void onDestroy() {
         if (mMediaPlayer != null) {
+            mMediaPlayer.reset();
             mMediaPlayer.release();
             mMediaPlayer = null;
         }
@@ -229,11 +236,27 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
     /** Called when MediaPlayer is ready */
     public void onPrepared(MediaPlayer player) {
         player.start();
+        Bundle resultData = new Bundle();
+        resultData.putInt("CurrentTrack", trackPosition);
+        resultReceiver.send(RESPONSE_PLAY, resultData);
     }
 
 
     @Override
     public void onCompletion(MediaPlayer mp) {
-        nextSong();
+        if (trackPosition < (listaTracks.size() - 1)) nextSong();
+        else {
+            Bundle resultData = new Bundle();
+            resultReceiver.send(RESPONSE_END, resultData);
+            mState = State.Retrieving;
+        }
+    }
+
+    // in case user touch seek bar
+    public void setTimePosition(int position)
+    {
+        if (mMediaPlayer!= null && (mState == State.Playing || mState == State.Paused)) {
+            mMediaPlayer.seekTo(position);
+        }
     }
 }

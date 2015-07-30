@@ -20,7 +20,8 @@
     </style>
 
     <style name="ListStyle">
-
+    </style>
+    <style name="DialgoMinWithStyle">
     </style>
 
 </resources>

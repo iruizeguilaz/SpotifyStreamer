@@ -148,6 +148,7 @@ public class SearchFragment extends Fragment {
                 if (result.size() == 0) {
                     int duration = Toast.LENGTH_SHORT;
                     Toast.makeText(getActivity(),getString(R.string.noalbums_message) , duration).show();
+                    if (((MainActivity)getActivity()).mTwoPane) ((Callback) getActivity()).onItemSelected(null);
                 } else {
                     for (Artist artista : result) {
                         mSpotifyAdapter.add(artista);

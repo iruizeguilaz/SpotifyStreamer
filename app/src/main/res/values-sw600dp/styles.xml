@@ -6,4 +6,8 @@
         <item name="android:choiceMode">singleChoice</item>
     </style>
 
+    <style name="DialgoMinWithStyle">
+        <item name="android:minWidth">500dp</item>
+    </style>
+
 </resources>

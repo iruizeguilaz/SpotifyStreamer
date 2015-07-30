@@ -39,24 +39,22 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.Ca
     @Override
     public void onItemSelected(Artist value) {
         if (mTwoPane) {
-            // In two-pane mode, show the detail view in this activity by
-            // adding or replacing the detail fragment using a
-            // fragment transaction.
             Bundle args = new Bundle();
-            args.putString("ArtistID", value.id);
-            args.putString("ArtistName", value.name);
-
+            if (value != null) {
+                args.putString("ArtistID", value.id);
+                args.putString("ArtistName", value.name);
+            }
             PopularFragment fragment = new PopularFragment();
             fragment.setArguments(args);
-
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.spotify_popular_container, fragment, POPULARFRAGMENT_TAG)
                     .commit();
         } else {
             Intent intent = new Intent(this, PopularActivity.class);
-            intent.putExtra("ArtistID", value.id);
-            intent.putExtra("ArtistName", value.name);
-
+            if (value != null) {
+                intent.putExtra("ArtistID", value.id);
+                intent.putExtra("ArtistName", value.name);
+            }
             startActivity(intent);
         }
     }
