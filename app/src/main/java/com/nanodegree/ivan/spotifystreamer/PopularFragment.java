@@ -22,6 +22,7 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.nanodegree.ivan.spotifystreamer.parceable.TrackParcelable;
+import com.nanodegree.ivan.spotifystreamer.service.ForegroundService;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -53,8 +54,16 @@ public class PopularFragment extends Fragment {
         AppCompatActivity activity = (AppCompatActivity) getActivity();
         ActionBar actionBar = activity.getSupportActionBar();
         actionBar.setSubtitle(artistaName);
+
+
     }
 
+    @Override
+    public void onDestroyView() {
+        //Intent sendIntent = new Intent(getActivity(), ForegroundService.class);
+        super.onDestroyView();
+        //getActivity().stopService(sendIntent);
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -72,7 +81,6 @@ public class PopularFragment extends Fragment {
             listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> adapter, View view, int position, long id) {
-
                     ArrayList<TrackParcelable> listaTracks = new ArrayList<TrackParcelable>();
                     for (int index = 0; index < mSpotifyAdapter.getCount(); index++)
                     {
@@ -80,7 +88,6 @@ public class PopularFragment extends Fragment {
                     }
                     FragmentManager fm = getActivity().getSupportFragmentManager();
                     PlayerDialogFragment myPlayer = new PlayerDialogFragment().newInstance(listaTracks, position ,artistaName);
-
                     if (!mTwoPane) {
                         FragmentTransaction transaction = fm.beginTransaction();
                         transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
@@ -88,7 +95,6 @@ public class PopularFragment extends Fragment {
                     } else {
                         myPlayer.show(fm, "dialog");
                     }
-
                 }
             });
         }

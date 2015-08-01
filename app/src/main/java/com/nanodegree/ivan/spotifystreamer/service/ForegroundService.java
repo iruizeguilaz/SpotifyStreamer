@@ -17,8 +17,8 @@ import android.os.ResultReceiver;
 import android.util.Log;
 
 import com.nanodegree.ivan.spotifystreamer.MainActivity;
-import com.nanodegree.ivan.spotifystreamer.R;
 import com.nanodegree.ivan.spotifystreamer.parceable.TrackParcelable;
+import com.squareup.picasso.Picasso;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,7 +30,6 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
     private final int RESPONSE_PAUSE = 1;
     private final int RESPONSE_PLAY = 2;
 
-
     private static final String ACTION_PLAY = "com.example.action.PLAY";
     private static final String ACTION_PAUSE = "com.example.action.PAUSE";
     private static final String ACTION_NEXT = "com.example.action.NEXT";
@@ -41,38 +40,31 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
     NotificationManager mNotificationManager;
     Notification mNotification = null;
     WifiManager.WifiLock mWifiLock;
-    String trackURL;
     int trackPosition;
     private ArrayList<TrackParcelable> listaTracks;
     ResultReceiver resultReceiver;
 
     // indicates the state our service:
     enum State {
-        Retrieving, // the MediaRetriever is retrieving music
-        Stopped,    // media player is stopped and not prepared to play
-        Preparing,  // media player is preparing...
-        Playing,    // playback active (media player ready!). (but the media player may actually be
-        // paused in this state if we don't have audio focus. But we stay in this state
-        // so that we know we have to resume playback once we get focus back)
-        Paused      // playback paused (media player ready!)
+        Retrieving,
+        Stopped,
+        Playing,
+        Paused
     };
 
     State mState = State.Retrieving;
-
     private final IBinder mBinder = new ForegroundServiceBinder();
-
     final int NOTIFICATION_ID = 1;
 
     public ForegroundService() {
     }
 
     public void initMediaPlayer() {
-        // ...initialize the MediaPlayer here...
         createMediaPlayer();
         mWifiLock = ((WifiManager) getSystemService(Context.WIFI_SERVICE))
                 .createWifiLock(WifiManager.WIFI_MODE_FULL, "mylock");
         mWifiLock.acquire();
-        //mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
     }
 
     public MediaPlayer getmMediaPlayer()
@@ -94,9 +86,6 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
 
     @Override
     public boolean onError(MediaPlayer mp, int what, int extra) {
-        // ... react appropriately ...
-        // The MediaPlayer has moved to the Error state, must be reset!
-
         mMediaPlayer.reset();
         return true;
     }
@@ -116,7 +105,7 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
                     mState = State.Playing;
                     Bundle resultData = new Bundle();
                     resultData.putInt("CurrentTrack", trackPosition);
-                    resultReceiver.send(RESPONSE_PLAY, resultData);
+                    if (resultReceiver!=null) resultReceiver.send(RESPONSE_PLAY, resultData);
                 }
                 if (mState == State.Stopped)
                 {
@@ -130,7 +119,7 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
                 resultData.putInt("CurrentTime", currentTime);
                 mMediaPlayer.pause();
                 mState = State.Paused;
-                resultReceiver.send(RESPONSE_PAUSE, resultData);
+                if (resultReceiver!=null) resultReceiver.send(RESPONSE_PAUSE, resultData);
                 break;
             case ACTION_NEXT:
                 nextSong();
@@ -197,28 +186,90 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
     }
 
     @Override
-    public IBinder onBind(Intent intent) {
+    public int onStartCommand(Intent intent, int flags, int startId) {
         resultReceiver = intent.getParcelableExtra("Receiver");
+
+        return START_NOT_STICKY;
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        //resultReceiver = intent.getParcelableExtra("Receiver");
 
         return mBinder;
     }
 
-    private void setUpAsForeground(String text) {
-        PendingIntent pi = PendingIntent.getActivity(getApplicationContext(), 0,
-                new Intent(getApplicationContext(), MainActivity.class),
-                PendingIntent.FLAG_UPDATE_CURRENT);
-        mNotification = new Notification();
-        mNotification.tickerText = text;
-        mNotification.icon = R.drawable.spotify;
-        mNotification.flags |= Notification.FLAG_ONGOING_EVENT;
-        mNotification.setLatestEventInfo(getApplicationContext(), "RandomMusicPlayer",
-                text, pi);
-        startForeground(NOTIFICATION_ID, mNotification);
+    @Override
+    public boolean onUnbind(Intent intent) {
+
+        resultReceiver = null;
+        return true;
     }
 
     @Override
+    public void onRebind(Intent intent) {
+        super.onRebind(intent);
+        //resultReceiver = intent.getParcelableExtra("Receiver");
+
+    }
+
+    void updateNotification() {
+        PendingIntent pi = PendingIntent.getActivity(getApplicationContext(), 0,
+                new Intent(getApplicationContext(), MainActivity.class),
+                PendingIntent.FLAG_UPDATE_CURRENT);
+        mNotification.setLatestEventInfo(getApplicationContext(), "Spotify Player", listaTracks.get(trackPosition).getTrack().name, pi);
+        mNotificationManager.notify(NOTIFICATION_ID, mNotification);
+    }
+
+    private void setUpAsForeground() {
+// TODO dar sentido a estos intent para que vuelvan al servicio dando una orden, mirar sino receivers, callbacks ejs
+        Intent playInent = new Intent(getApplicationContext(), ForegroundService.class);
+        playInent.setAction("play");
+        PendingIntent playPendingIntent = PendingIntent.getService(getApplicationContext(), 0, playInent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        Intent prevIntent = new Intent(getApplicationContext(), ForegroundService.class);
+        prevIntent.setAction("prev");
+        PendingIntent prevPendingIntent = PendingIntent.getService(getApplicationContext(), 1, prevIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        Intent nextIntent = new Intent(getApplicationContext(), ForegroundService.class);
+        nextIntent.setAction("next");
+        PendingIntent nextPendingIntent = PendingIntent.getService(getApplicationContext(), 2, nextIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        Intent offIntent = new Intent(getApplicationContext(), ForegroundService.class);
+        offIntent.setAction("off");
+        PendingIntent offPendingIntent = PendingIntent.getService(getApplicationContext(), 3, offIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+
+        PendingIntent pi = PendingIntent.getActivity(getApplicationContext(), 0,
+                new Intent(getApplicationContext(), ForegroundService.class),
+                PendingIntent.FLAG_UPDATE_CURRENT);
+
+            mNotification = new Notification.Builder(this)
+                    // Show controls on lock screen even when user hides sensitive content.
+                    //.setVisibility(Notification.VISIBILITY_PUBLIC)
+                    .setSmallIcon(android.R.drawable.ic_media_play)
+                            // Add media control buttons that invoke intents in your media service
+                    .addAction(android.R.drawable.ic_media_previous, "Previous", prevPendingIntent) // #0
+                    .addAction(android.R.drawable.ic_media_pause, "Pause", offPendingIntent)  // #1
+                    .addAction(android.R.drawable.ic_media_next, "Next", nextPendingIntent)     // #2
+                            // Apply the media style template
+            //.setStyle(new Notification.MediaStyle()
+            //.setShowActionsInCompactView(1 /* #1: pause button */)
+            //.setMediaSession(null)
+                            //)
+                                   .setContentTitle(listaTracks.get(trackPosition).getTrack().artists.get(0).name)
+                                    .setContentText(listaTracks.get(trackPosition).getTrack().name)
+       // TODO hacerlo en asyntask             //.setLargeIcon(Picasso.with(getApplicationContext()).load(listaTracks.get(trackPosition).getTrack().album.images.get(0).url).get())
+                    .build();
+
+
+
+        startForeground(NOTIFICATION_ID, mNotification);
+    }
+
+
+    @Override
     public void onCreate(){
-        //create the service
         initMediaPlayer();
     }
 
@@ -230,6 +281,9 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
             mMediaPlayer = null;
         }
         mWifiLock.release();
+        if (mNotification != null)
+            mNotificationManager.cancel(NOTIFICATION_ID);
+
         //mState = State.Stopped;
     }
 
@@ -238,16 +292,23 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
         player.start();
         Bundle resultData = new Bundle();
         resultData.putInt("CurrentTrack", trackPosition);
-        resultReceiver.send(RESPONSE_PLAY, resultData);
+        if (resultReceiver!=null) resultReceiver.send(RESPONSE_PLAY, resultData);
+        if (mNotification == null) setUpAsForeground();
+        else updateNotification();
+
     }
 
+    public void deleteReceiver()
+    {
+        resultReceiver = null;
+    }
 
     @Override
     public void onCompletion(MediaPlayer mp) {
         if (trackPosition < (listaTracks.size() - 1)) nextSong();
         else {
             Bundle resultData = new Bundle();
-            resultReceiver.send(RESPONSE_END, resultData);
+            if (resultReceiver!=null) resultReceiver.send(RESPONSE_END, resultData);
             mState = State.Retrieving;
         }
     }

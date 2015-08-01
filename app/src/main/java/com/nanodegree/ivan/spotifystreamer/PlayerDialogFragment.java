@@ -5,10 +5,9 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
-import android.os.ResultReceiver;
 import android.support.v4.app.DialogFragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,6 +18,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.nanodegree.ivan.spotifystreamer.parceable.TrackParcelable;
+import com.nanodegree.ivan.spotifystreamer.receiver.MusicResultReceiver;
 import com.nanodegree.ivan.spotifystreamer.service.ForegroundService;
 import com.nanodegree.ivan.spotifystreamer.service.SeekbarUpdate;
 import com.squareup.picasso.Picasso;
@@ -41,13 +41,13 @@ public class PlayerDialogFragment extends DialogFragment  implements View.OnClic
 
     boolean mBound = false;
     ForegroundService mediaPlayerService;
-
-    final static String TAG = "PlayerDialogFragment";
+    boolean isDialog =  false;
 
     private static final String ACTION_PLAY = "com.example.action.PLAY";
     private static final String ACTION_PAUSE = "com.example.action.PAUSE";
     private static final String ACTION_NEXT = "com.example.action.NEXT";
     private static final String ACTION_PREVIOUS = "com.example.action.PREVIOUS";
+    private MusicResultReceiver receiverForTest;
 
     TextView player_albumname;
     TextView player_artistname;
@@ -71,11 +71,38 @@ public class PlayerDialogFragment extends DialogFragment  implements View.OnClic
         return fm;
     }
 
+    // Setup the callback for when data is received from the service
+    public void setupServiceReceiver() {
+        receiverForTest = new MusicResultReceiver(new Handler());
+        // This is where we specify what happens when data is received from the service
+        receiverForTest.setReceiver(new MusicResultReceiver.Receiver() {
+            @Override
+            public void onReceiveResult(int resultCode, Bundle resultData) {
+                switch (resultCode) {
+                    case RESPONSE_END:
+                        pauseButton.setVisibility(View.GONE);
+                        playButton.setVisibility(View.VISIBLE);
+                        break;
+                    case RESPONSE_PLAY:
+                        int track = resultData.getInt("CurrentTrack");
+                        new Thread(new SeekbarUpdate(mediaPlayerService, seekbar)).start();
+                        if (track != currentPosition) {
+                            currentPosition = track;
+                            LoadTrack();
+                        }
+                        break;
+                    case RESPONSE_PAUSE:
+                        int time = resultData.getInt("CurrentTime");
+                        seekbar.setProgress(time);
+                        break;
+                }
+            }
+        });
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout to use as dialog or embedded fragment
         View myView = inflater.inflate(R.layout.dialogfragment_player, container, false);
         Bundle arguments = getArguments();
 
@@ -127,45 +154,31 @@ public class PlayerDialogFragment extends DialogFragment  implements View.OnClic
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-
+        setupServiceReceiver();
         LoadTrack();
 
         Intent sendIntent = new Intent(getActivity(), ForegroundService.class);
-
-        sendIntent.putExtra("Receiver", new ResultReceiver(null) {
-            @Override
-            protected void onReceiveResult(int resultCode, Bundle resultData) {
-                switch (resultCode) {
-                    case RESPONSE_END:
-                        pauseButton.setVisibility(View.GONE);
-                        playButton.setVisibility(View.VISIBLE);
-                        // TODO stop seekbar
-                        break;
-                    case RESPONSE_PLAY:
-                        int track = resultData.getInt("CurrentTrack");
-                        new Thread(new SeekbarUpdate(mediaPlayerService, seekbar)).start();
-                        if (track != currentPosition) {
-                            currentPosition = track;
-                            LoadTrack();
-                        }
-                        break;
-                    case RESPONSE_PAUSE:
-                        // TODO stop seekbar
-                        int time = resultData.getInt("CurrentTime");
-                        seekbar.setProgress(time);
-                        break;
-                }
-            }
-        });
+        sendIntent.putExtra("Receiver",receiverForTest);
         getActivity().startService(sendIntent);
         getActivity().bindService(sendIntent, mConnection, getActivity().BIND_AUTO_CREATE);
     }
 
     @Override
     public void onDestroyView() {
-        getActivity().unbindService(mConnection);
+        if (mBound == true) getActivity().unbindService(mConnection);
         super.onDestroyView();
 
+    }
+
+    @Override
+    public void onPause() {
+        if (mBound == true) {
+            mBound = false;
+            getActivity().unbindService(mConnection);
+       }
+        super.onPause();
+        if (isDialog) dismiss();
+        else getFragmentManager().popBackStack();
     }
 
     private void LoadTrack()
@@ -189,13 +202,10 @@ public class PlayerDialogFragment extends DialogFragment  implements View.OnClic
     /** The system calls this only when creating the layout in a dialog. */
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        // The only reason you might override this method when using onCreateView() is
-        // to modify any dialog characteristics. For example, the dialog includes a
-        // title by default, but your custom layout might not need it. So here you can
-        // remove the dialog title, but you must call the superclass to get the Dialog.
         Dialog dialog = super.onCreateDialog(savedInstanceState);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setCanceledOnTouchOutside(false);
+        isDialog = true;
         return dialog;
     }
 
@@ -241,6 +251,8 @@ public class PlayerDialogFragment extends DialogFragment  implements View.OnClic
             mediaPlayerService.songEvents(ACTION_PREVIOUS);
         }
     }
+
+
 
 
 
