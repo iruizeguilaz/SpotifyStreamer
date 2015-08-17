@@ -54,15 +54,14 @@ public class PopularFragment extends Fragment {
         AppCompatActivity activity = (AppCompatActivity) getActivity();
         ActionBar actionBar = activity.getSupportActionBar();
         actionBar.setSubtitle(artistaName);
-
-
     }
 
     @Override
     public void onDestroyView() {
-        //Intent sendIntent = new Intent(getActivity(), ForegroundService.class);
+        Intent sendIntent = new Intent(getActivity(), ForegroundService.class);
+        getActivity().stopService(sendIntent);
         super.onDestroyView();
-        //getActivity().stopService(sendIntent);
+
     }
 
     @Override
