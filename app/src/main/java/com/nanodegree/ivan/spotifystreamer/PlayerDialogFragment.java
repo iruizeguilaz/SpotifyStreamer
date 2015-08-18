@@ -8,7 +8,12 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.app.DialogFragment;
+import android.support.v4.view.MenuItemCompat;
+import android.support.v7.widget.ShareActionProvider;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -28,6 +33,8 @@ import java.util.List;
 
 import kaaes.spotify.webapi.android.models.Image;
 import kaaes.spotify.webapi.android.models.Track;
+
+
 
 /**
  * Created by Ivan on 24/07/2015.
@@ -60,6 +67,8 @@ public class PlayerDialogFragment extends DialogFragment  implements View.OnClic
     private final int RESPONSE_END = 0;
     private final int RESPONSE_PAUSE = 1;
     private final int RESPONSE_PLAY = 2;
+
+    private ShareActionProvider mShareActionProvider;
 
     public static PlayerDialogFragment newInstance(ArrayList<TrackParcelable> listaTracks, int position, String artistName) {
         PlayerDialogFragment fm = new PlayerDialogFragment();
@@ -103,12 +112,19 @@ public class PlayerDialogFragment extends DialogFragment  implements View.OnClic
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+
+        setHasOptionsMenu(true);
+
         View myView = inflater.inflate(R.layout.dialogfragment_player, container, false);
         Bundle arguments = getArguments();
 
         listaTracks = arguments.getParcelableArrayList("ListTracks");
         artistName = arguments.getString("ArtistName");
         currentPosition = arguments.getInt("Position");
+
+        getArguments().remove("ListTracks");
+        getArguments().remove("ArtistName");
+        getArguments().remove("Position");
 
         //load layauts elements
         player_albumname = (TextView)myView.findViewById(R.id.player_albumname);
@@ -152,6 +168,23 @@ public class PlayerDialogFragment extends DialogFragment  implements View.OnClic
     }
 
     @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        inflater.inflate(R.menu.playerdialog, menu);
+
+        // Retrieve the share menu item
+        MenuItem menuItem = menu.findItem(R.id.action_share);
+
+        // Get the provider and hold onto it to set/change the share intent.
+        mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(menuItem);
+        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+        shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+        shareIntent.setType("text/plain");
+        shareIntent.putExtra(Intent.EXTRA_TEXT, trackUrl);
+        mShareActionProvider.setShareIntent(shareIntent);
+    }
+
+    @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         setupServiceReceiver();
@@ -165,20 +198,20 @@ public class PlayerDialogFragment extends DialogFragment  implements View.OnClic
 
     @Override
     public void onDestroyView() {
-        if (mBound == true) getActivity().unbindService(mConnection);
+        if (mBound) getActivity().unbindService(mConnection);
         super.onDestroyView();
 
     }
 
     @Override
     public void onPause() {
-        if (mBound == true) {
-            mBound = false;
-            getActivity().unbindService(mConnection);
-       }
+       //if (mBound == true) {
+       //     mBound = false;
+        //    getActivity().unbindService(mConnection);
+       //}
         super.onPause();
-        if (isDialog) dismiss();
-        else getFragmentManager().popBackStack();
+        //if (isDialog) dismiss();
+       // else getFragmentManager().popBackStack();
     }
 
     private void LoadTrack()
@@ -196,6 +229,14 @@ public class PlayerDialogFragment extends DialogFragment  implements View.OnClic
             Picasso.with(getActivity()).load(url).into(image);
         } else {
             image.setImageResource(R.drawable.spotify);
+        }
+        // update share url (the first song is added onCreateOptionMenu
+        if (mShareActionProvider!= null) {
+            Intent shareIntent = new Intent(Intent.ACTION_SEND);
+            shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+            shareIntent.setType("text/plain");
+            shareIntent.putExtra(Intent.EXTRA_TEXT, currentTrack.preview_url);
+            mShareActionProvider.setShareIntent(shareIntent);
         }
     }
 

@@ -53,16 +53,11 @@ public class PopularFragment extends Fragment {
         super.onActivityCreated(savedInstanceState);
         AppCompatActivity activity = (AppCompatActivity) getActivity();
         ActionBar actionBar = activity.getSupportActionBar();
-        actionBar.setSubtitle(artistaName);
+        if (artistaName != null)
+            actionBar.setSubtitle(artistaName);
     }
 
-    @Override
-    public void onDestroyView() {
-        Intent sendIntent = new Intent(getActivity(), ForegroundService.class);
-        getActivity().stopService(sendIntent);
-        super.onDestroyView();
 
-    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,

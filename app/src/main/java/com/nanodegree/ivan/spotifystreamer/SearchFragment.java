@@ -22,6 +22,8 @@ import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.Toast;
 
+import com.nanodegree.ivan.spotifystreamer.service.ForegroundService;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,7 +51,7 @@ public class SearchFragment extends Fragment {
         /**
          * DetailFragmentCallback for when an item has been selected.
          */
-        public void onItemSelected(Artist value);
+        void onItemSelected(Artist value);
     }
 
     @Override
@@ -114,6 +116,14 @@ public class SearchFragment extends Fragment {
                 }
             }
         });
+    }
+
+    @Override
+    public void onDestroyView() {
+        Intent sendIntent = new Intent(getActivity(), ForegroundService.class);
+        getActivity().stopService(sendIntent);
+        super.onDestroyView();
+
     }
 
     public class FetchSpotyArtistTask extends AsyncTask<String, Void,  List<Artist>> {

@@ -8,5 +8,16 @@
     <string name="action_popular">Popular</string>
     <string name="title_activity_popular_fragnmet">Top 10 Tracks</string>
     <string name="title_activity_player">PlayerActivity</string>
+    <string name="action_share">Share</string>
+
+    <string name="pref_location_label">Preference location</string>
+    <string name="pref_location_key" translatable="false">location</string>
+    <string name="pref_location_default" translatable="false">ES</string>
+
+    <string name="pref_enable_notifications_key" translatable="false">enable_lockscreen</string>
+    <string name="pref_enable_notifications_label">Enable Lock Screen</string>
+    <string name="pref_enable_notifications_true">Enabled</string>
+    <string name="pref_enable_notifications_false">Not Enabled</string>
+    <string name="pref_enable_notifications_default" translatable="false">true</string>
 
 </resources>

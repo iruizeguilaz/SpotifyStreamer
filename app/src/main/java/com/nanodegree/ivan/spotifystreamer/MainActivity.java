@@ -67,5 +67,5 @@ public class MainActivity extends AppCompatActivity implements SearchFragment.Ca
         return true;
     }
 
-
+   
 }
