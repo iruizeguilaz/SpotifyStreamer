@@ -30,6 +30,7 @@ import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import kaaes.spotify.webapi.android.models.Image;
 import kaaes.spotify.webapi.android.models.Track;
@@ -64,6 +65,9 @@ public class PlayerDialogFragment extends DialogFragment  implements View.OnClic
     ImageButton playButton;
     SeekBar seekbar;
 
+    TextView currentTimeSeekBar;
+    TextView totalTimeSeekBar;
+
     private final int RESPONSE_END = 0;
     private final int RESPONSE_PAUSE = 1;
     private final int RESPONSE_PLAY = 2;
@@ -94,7 +98,7 @@ public class PlayerDialogFragment extends DialogFragment  implements View.OnClic
                         break;
                     case RESPONSE_PLAY:
                         int track = resultData.getInt("CurrentTrack");
-                        new Thread(new SeekbarUpdate(mediaPlayerService, seekbar)).start();
+                        new Thread(new SeekbarUpdate(getActivity(), mediaPlayerService, seekbar, currentTimeSeekBar, totalTimeSeekBar)).start();
                         if (track != currentPosition) {
                             currentPosition = track;
                             LoadTrack();
@@ -135,11 +139,15 @@ public class PlayerDialogFragment extends DialogFragment  implements View.OnClic
         pauseButton = (ImageButton) myView.findViewById(R.id.player_pause);
         seekbar = (SeekBar)  myView.findViewById(R.id.seekBar);
 
+        currentTimeSeekBar = (TextView)myView.findViewById(R.id.SeekBarCurrentTime);
+        totalTimeSeekBar = (TextView)myView.findViewById(R.id.SeekBarTotalTime);
+
         seekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (fromUser) {
                     mediaPlayerService.setTimePosition(progress);
+                    currentTimeSeekBar.setText(String.valueOf(TimeUnit.MILLISECONDS.toSeconds(progress)));
                 }
             }
 
@@ -191,9 +199,10 @@ public class PlayerDialogFragment extends DialogFragment  implements View.OnClic
         LoadTrack();
 
         Intent sendIntent = new Intent(getActivity(), ForegroundService.class);
-        sendIntent.putExtra("Receiver",receiverForTest);
+        sendIntent.putExtra("Receiver", receiverForTest);
         getActivity().startService(sendIntent);
         getActivity().bindService(sendIntent, mConnection, getActivity().BIND_AUTO_CREATE);
+
     }
 
     @Override
@@ -260,6 +269,10 @@ public class PlayerDialogFragment extends DialogFragment  implements View.OnClic
             mediaPlayerService = ((ForegroundService.ForegroundServiceBinder) service).getService();
             mediaPlayerService.setTracks(listaTracks, currentPosition);
             mBound = true;
+            // play the song straigth away
+            playButton.setVisibility(View.GONE);
+            pauseButton.setVisibility(View.VISIBLE);
+            mediaPlayerService.songEvents(ACTION_PLAY);
         }
 
         @Override
