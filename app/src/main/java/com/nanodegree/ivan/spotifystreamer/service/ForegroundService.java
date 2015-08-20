@@ -34,6 +34,7 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
     private final int RESPONSE_END = 0;
     private final int RESPONSE_PAUSE = 1;
     private final int RESPONSE_PLAY = 2;
+    private final int RESPONSE_ERROR = 3;
 
     private static final String ACTION_PLAY = "com.example.action.PLAY";
     private static final String ACTION_PAUSE = "com.example.action.PAUSE";
@@ -94,6 +95,7 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
     @Override
     public boolean onError(MediaPlayer mp, int what, int extra) {
         mMediaPlayer.reset();
+        if (resultReceiver!=null) resultReceiver.send(RESPONSE_ERROR, null);
         return true;
     }
 
@@ -165,6 +167,7 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
         } catch (IOException e) {
             Log.v(TAG, e.getMessage());
             mState = State.Retrieving;
+            if (resultReceiver!=null) resultReceiver.send(RESPONSE_ERROR, null);
         }
     }
 
@@ -189,7 +192,7 @@ public class ForegroundService extends Service implements MediaPlayer.OnPrepared
             mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
             mMediaPlayer.setOnPreparedListener(this);
             mMediaPlayer.setOnCompletionListener(this);
-        mMediaPlayer.setOnErrorListener(this);
+            mMediaPlayer.setOnErrorListener(this);
     }
 
     public class ForegroundServiceBinder extends Binder {

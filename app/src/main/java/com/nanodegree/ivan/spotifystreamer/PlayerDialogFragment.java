@@ -71,6 +71,7 @@ public class PlayerDialogFragment extends DialogFragment  implements View.OnClic
     private final int RESPONSE_END = 0;
     private final int RESPONSE_PAUSE = 1;
     private final int RESPONSE_PLAY = 2;
+    private final int RESPONSE_ERROR = 3;
 
     private ShareActionProvider mShareActionProvider;
 
@@ -111,6 +112,11 @@ public class PlayerDialogFragment extends DialogFragment  implements View.OnClic
                         seekbar.setProgress(time);
                         pauseButton.setVisibility(View.GONE);
                         playButton.setVisibility(View.VISIBLE);
+                        break;
+                    case RESPONSE_ERROR:
+                        pauseButton.setVisibility(View.GONE);
+                        playButton.setVisibility(View.VISIBLE);
+                        currentTimeSeekBar.setText("0");
                         break;
                 }
             }
