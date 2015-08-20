@@ -125,15 +125,21 @@ public class PopularFragment extends Fragment {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            SpotifyApi api = new SpotifyApi();
-            SpotifyService spotify = api.getService();
-            HashMap<String,Object> queryString = new HashMap<>();
-            queryString.put(SpotifyService.COUNTRY, Locale.getDefault().getCountry());
 
-            Tracks tracks = spotify.getArtistTopTrack(params[0], queryString);
-            List<Track> lista = tracks.tracks;
-            Log.v(LOG_TAG, lista.toString());
-            return lista;
+            try {
+                SpotifyApi api = new SpotifyApi();
+                SpotifyService spotify = api.getService();
+                HashMap<String, Object> queryString = new HashMap<>();
+                queryString.put(SpotifyService.COUNTRY, Locale.getDefault().getCountry());
+
+                Tracks tracks = spotify.getArtistTopTrack(params[0], queryString);
+                List<Track> lista = tracks.tracks;
+                Log.v(LOG_TAG, lista.toString());
+                return lista;
+            } catch (Exception ex)
+            {
+                return null;
+            }
         }
 
         @Override
@@ -148,6 +154,9 @@ public class PopularFragment extends Fragment {
                         mSpotifyAdapter.add(track);
                     }
                 }
+            } else {
+                int duration = Toast.LENGTH_SHORT;
+                Toast.makeText(getActivity(), getString(R.string.nonetwork_message), duration).show();
             }
         }
     }

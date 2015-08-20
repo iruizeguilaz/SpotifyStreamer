@@ -103,10 +103,14 @@ public class PlayerDialogFragment extends DialogFragment  implements View.OnClic
                             currentPosition = track;
                             LoadTrack();
                         }
+                        pauseButton.setVisibility(View.VISIBLE);
+                        playButton.setVisibility(View.GONE);
                         break;
                     case RESPONSE_PAUSE:
                         int time = resultData.getInt("CurrentTime");
                         seekbar.setProgress(time);
+                        pauseButton.setVisibility(View.GONE);
+                        playButton.setVisibility(View.VISIBLE);
                         break;
                 }
             }

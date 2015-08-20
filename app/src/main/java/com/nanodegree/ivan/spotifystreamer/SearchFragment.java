@@ -141,14 +141,20 @@ public class SearchFragment extends Fragment {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            SpotifyApi api = new SpotifyApi();
-            SpotifyService spotify = api.getService();
-            ArtistsPager results = spotify.searchArtists(params[0]);
-            Pager<Artist> artist =  results.artists;
-            List<Artist> lista = artist.items;
+            try {
+                SpotifyApi api = new SpotifyApi();
+                SpotifyService spotify = api.getService();
+                ArtistsPager results = spotify.searchArtists(params[0]);
+                Pager<Artist> artist =  results.artists;
+                List<Artist> lista = artist.items;
 
-            Log.v(LOG_TAG, lista.toString());
-            return lista;
+                Log.v(LOG_TAG, lista.toString());
+                return lista;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
         }
 
         @Override
@@ -168,6 +174,10 @@ public class SearchFragment extends Fragment {
                         ((Callback) getActivity()).onItemSelected(result.get(0));
                     }
                 }
+            }else {
+                int duration = Toast.LENGTH_SHORT;
+                Toast.makeText(getActivity(),getString(R.string.nonetwork_message) , duration).show();
+                if (((MainActivity)getActivity()).mTwoPane) ((Callback) getActivity()).onItemSelected(null);
             }
         }
     }
