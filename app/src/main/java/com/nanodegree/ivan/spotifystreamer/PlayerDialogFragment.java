@@ -104,12 +104,16 @@ public class PlayerDialogFragment extends DialogFragment  implements View.OnClic
                             currentPosition = track;
                             LoadTrack();
                         }
+                        playButton.setClickable(true);
+                        pauseButton.setClickable(true);
                         pauseButton.setVisibility(View.VISIBLE);
                         playButton.setVisibility(View.GONE);
                         break;
                     case RESPONSE_PAUSE:
                         int time = resultData.getInt("CurrentTime");
                         seekbar.setProgress(time);
+                        playButton.setClickable(true);
+                        pauseButton.setClickable(true);
                         pauseButton.setVisibility(View.GONE);
                         playButton.setVisibility(View.VISIBLE);
                         break;
@@ -280,6 +284,7 @@ public class PlayerDialogFragment extends DialogFragment  implements View.OnClic
             mediaPlayerService.setTracks(listaTracks, currentPosition);
             mBound = true;
             // play the song straigth away
+            pauseButton.setClickable(false);
             playButton.setVisibility(View.GONE);
             pauseButton.setVisibility(View.VISIBLE);
             mediaPlayerService.songEvents(ACTION_PLAY);
@@ -305,13 +310,13 @@ public class PlayerDialogFragment extends DialogFragment  implements View.OnClic
             mediaPlayerService.songEvents(ACTION_PLAY);
         }
         if (button.getId() == R.id.player_next){
-            pauseButton.setVisibility(View.VISIBLE);
-            playButton.setVisibility(View.GONE);
+            playButton.setClickable(false);
+            pauseButton.setClickable(false);
             mediaPlayerService.songEvents(ACTION_NEXT);
         }
         if (button.getId() == R.id.player_previous){
-            pauseButton.setVisibility(View.VISIBLE);
-            playButton.setVisibility(View.GONE);
+            playButton.setClickable(false);
+            pauseButton.setClickable(false);
             mediaPlayerService.songEvents(ACTION_PREVIOUS);
         }
     }

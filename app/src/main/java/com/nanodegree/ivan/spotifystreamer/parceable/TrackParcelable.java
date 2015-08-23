@@ -10,7 +10,7 @@ import kaaes.spotify.webapi.android.models.Track;
  */
 public class TrackParcelable implements Parcelable {
 
-    private Track track;
+    Track track;
 
     public TrackParcelable(Track point) {
         track = point;

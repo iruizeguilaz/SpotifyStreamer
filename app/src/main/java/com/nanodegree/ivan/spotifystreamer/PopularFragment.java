@@ -5,6 +5,7 @@ package com.nanodegree.ivan.spotifystreamer;
 
 import android.content.Intent;
 import android.os.AsyncTask;
+import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 
@@ -92,25 +93,58 @@ public class PopularFragment extends Fragment {
                 }
             });
         }
-        Bundle arguments = getArguments();
-        if (arguments != null) {
-            artistaID = arguments.getString("ArtistID");
-            artistaName = arguments.getString("ArtistName");
-            mTwoPane = true;
-        }else {
-            Intent intent = getActivity().getIntent();
-            artistaID = intent.getStringExtra("ArtistID");
-            artistaName = intent.getStringExtra("ArtistName");
-            mTwoPane = false;
-        }
-        if (spotify != null) spotify.cancel(true);
-        if (artistaID != null && !artistaID.equals("")) {
-            spotify = new FetchSpotyTraskTask();
-            spotify.execute(artistaID);
+        /*
+        if (savedInstanceState != null && savedInstanceState.getParcelableArrayList("ListTracks") != null) {
+            ArrayList<TrackParcelable> listTracks = savedInstanceState.getParcelableArrayList("ListTracks");
+            for (int i = 0; i < listTracks.size(); i++) {
+                mSpotifyAdapter.add(listTracks.get(i).getTrack());
+            }
+
         } else {
-            if (mSpotifyAdapter != null) mSpotifyAdapter.clear();
-        }
+        */
+            Bundle arguments = getArguments();
+            if (arguments != null) {
+                artistaID = arguments.getString("ArtistID");
+                artistaName = arguments.getString("ArtistName");
+                mTwoPane = true;
+            }else {
+                Intent intent = getActivity().getIntent();
+                artistaID = intent.getStringExtra("ArtistID");
+                artistaName = intent.getStringExtra("ArtistName");
+                mTwoPane = false;
+            }
+            if (spotify != null) spotify.cancel(true);
+            if (artistaID != null && !artistaID.equals("")) {
+                spotify = new FetchSpotyTraskTask();
+                spotify.execute(artistaID);
+            } else {
+                if (mSpotifyAdapter != null) mSpotifyAdapter.clear();
+            }
+        //}
+
         return rootView;
+    }
+
+   /* @Override
+    public void onSaveInstanceState(Bundle outState)
+    {
+        ArrayList<TrackParcelable> listTracks = new ArrayList<TrackParcelable>();
+        for (int index = 0; index < mSpotifyAdapter.getCount(); index++)
+        {
+            listTracks.add( new TrackParcelable( mSpotifyAdapter.getItem(index)));
+        }
+        outState.putParcelableArrayList("ListTracks", listTracks);
+        super.onSaveInstanceState(outState);
+    }*/
+
+    @Override
+    public void onPause() {
+        super.onPause();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
     }
 
     public class FetchSpotyTraskTask extends AsyncTask<String, Void, List<Track>> {
